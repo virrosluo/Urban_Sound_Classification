@@ -1,3 +1,5 @@
 lightning
 wandb
 librosa
+soundata
+deepspeed

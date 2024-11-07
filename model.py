@@ -1,5 +1,5 @@
 from torch import nn
-from torchmetrics.classification import MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassF1Score, Accuracy
+from torchmetrics.classification import MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassF1Score
 
 import wandb
 import torch
@@ -8,23 +8,25 @@ import librosa
 import matplotlib.pyplot as plt
 
 class ResnetLightning(lightning.LightningModule):
-    def __init__(self, model, num_classes):
+    def __init__(self, model: nn.Module, num_classes):
         super().__init__()
         self.model = model
         self.criterion = torch.nn.CrossEntropyLoss()
-        self.metrics = {
-            "Accuracy": MulticlassAccuracy(num_classes=num_classes),
-            "Precision": MulticlassPrecision(num_classes=num_classes),
-            "Recall": MulticlassRecall(num_classes=num_classes),
-            "F1Score": MulticlassF1Score(num_classes=num_classes)
-        }
+        
+        self.accuracy_metric = MulticlassAccuracy(num_classes=num_classes)
+        self.precision_metric = MulticlassPrecision(num_classes=num_classes)
+        self.recall_metric = MulticlassRecall(num_classes=num_classes)
+        self.f1_metric = MulticlassF1Score(num_classes=num_classes)
+        
+        self.input_dataset = []
 
     def training_step(self, batch, batch_idx):
         x, y = batch
+        self.input_dataset.append(x)
         logits = self.model(x)
         loss = self.criterion(logits, y)
 
-        self.log_dict({"train_loss": loss})
+        self.log_dict({"train_loss": loss}, sync_dist=True)
         
         return loss
 
@@ -36,10 +38,13 @@ class ResnetLightning(lightning.LightningModule):
         loss = self.criterion(logits, y)
         preds = torch.argmax(torch.softmax(logits, -1), -1)
         
-        self.log("valid_loss", loss)
+        self.log("valid_loss", loss, sync_dist=True)
         self.log_dict({
-            f"valid_{k}": v(preds, y) for k, v in self.metrics.items()
-        })
+            "valid_accuracy": self.accuracy_metric(preds, y),
+            "valid_precision": self.precision_metric(preds, y),
+            "valid_recall": self.recall_metric(preds, y),
+            "valid_f1": self.f1_metric(preds, y)
+        }, sync_dist=True)
 
         if batch_idx == 0:
             self.log_mel_spectrogram(x, y, preds)
@@ -53,10 +58,13 @@ class ResnetLightning(lightning.LightningModule):
         loss = self.criterion(logits, y)
         preds = torch.argmax(torch.softmax(logits, -1), -1)
         
-        self.log("test_loss", loss)
+        self.log("test_loss", loss, sync_dist=True)
         self.log_dict({
-            f"test_{k}": v(preds, y) for k, v in self.metrics.items()
-        })
+            "test_accuracy": self.accuracy_metric(preds, y),
+            "test_precision": self.precision_metric(preds, y),
+            "test_recall": self.recall_metric(preds, y),
+            "test_f1": self.f1_metric(preds, y)
+        }, sync_dist=True)
         
         if batch_idx == 0:
             self.log_mel_spectrogram(x, y, preds)

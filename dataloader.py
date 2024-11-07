@@ -58,7 +58,7 @@ class UrbanSoundLightning(lightning.LightningDataModule):
             dataset=self.train_dataset,
             batch_size=self.train_batch_size,
             shuffle=True,
-            num_workers=1
+            num_workers=multiprocessing.cpu_count() // 2
         )
 
     def val_dataloader(self):
@@ -66,7 +66,7 @@ class UrbanSoundLightning(lightning.LightningDataModule):
             dataset=self.valid_dataset,
             batch_size=self.infer_batch_size,
             shuffle=False,
-            num_workers=1
+            num_workers=multiprocessing.cpu_count() // 2
         )
 
     def test_dataloader(self):
@@ -74,7 +74,7 @@ class UrbanSoundLightning(lightning.LightningDataModule):
             dataset=self.test_dataset,
             batch_size=self.infer_batch_size,
             shuffle=False,
-            num_workers=1
+            num_workers=multiprocessing.cpu_count() // 2
         )
 
 class LazyUrbanSoundDataset(Dataset):
@@ -130,6 +130,7 @@ class LazyUrbanSoundDataset(Dataset):
     def _get_transformation(self, signal):
         for transform in self.transformation:
             signal = transform(signal)
+        signal = (signal - -5.8789) / 17.7523
         return signal
 
 

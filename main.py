@@ -3,7 +3,9 @@ from model import ResnetLightning, CNNNetwork
 
 import lightning
 from lightning.pytorch.loggers.wandb import WandbLogger
-import torchvision
+from lightning.pytorch.strategies import DeepSpeedStrategy
+
+lightning.seed_everything(42)
 
 NUM_CLASSES = 10
 ANNOTATIONS_FILE = "./data/metadata/UrbanSound8K.csv"
@@ -35,14 +37,19 @@ logger = WandbLogger(
     log_model=True
 )
 
+strategy = DeepSpeedStrategy()
+
 trainer = lightning.Trainer(
     logger=logger,
+    strategy=strategy,
+    devices=-1,
     max_epochs=100,
     val_check_interval=0.2,
     log_every_n_steps=1,
     default_root_dir="./cache",
     gradient_clip_val=1.0,
-    gradient_clip_algorithm="norm"
+    gradient_clip_algorithm="norm",
+    accumulate_grad_batches=4
 )
 
 trainer.fit(

@@ -8,13 +8,13 @@ from lightning.pytorch.strategies import DeepSpeedStrategy
 lightning.seed_everything(42)
 
 NUM_CLASSES = 10
-ANNOTATIONS_FILE = "./data/metadata/UrbanSound8K.csv"
-AUDIO_DIR = "./data/audio"
+ANNOTATIONS_FILE = "/kaggle/input/urbansound8k/UrbanSound8K.csv"
+AUDIO_DIR = "/kaggle/input/urbansound8k"
 SAMPLE_RATE = 22050
 TARGET_LENGTH = 22050
 
-TRAIN_BATCH_SIZE = 128
-INFER_BATCH_SIZE = 256
+TRAIN_BATCH_SIZE = 512
+INFER_BATCH_SIZE = 1024
 
 lightning_model = ResnetLightning(
     model=CNNNetwork(), 
@@ -49,7 +49,7 @@ trainer = lightning.Trainer(
     default_root_dir="./cache",
     gradient_clip_val=1.0,
     gradient_clip_algorithm="norm",
-    accumulate_grad_batches=4
+    accumulate_grad_batches=1
 )
 
 trainer.fit(

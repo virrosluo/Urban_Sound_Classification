@@ -16,7 +16,8 @@ class UrbanSoundLightning(lightning.LightningDataModule):
         train_batch_size,
         infer_batch_size,
         target_sample_rate = 22050, 
-        target_length = 22050):
+        target_length = 22050
+    ):
         super().__init__()
         self.annotations = pd.read_csv(annotations_file)
         self.audio_dir = audio_dir
@@ -25,12 +26,11 @@ class UrbanSoundLightning(lightning.LightningDataModule):
         self.train_batch_size = train_batch_size
         self.infer_batch_size = infer_batch_size
 
-    def prepare_data(self):
         self.annotations["path"] = self.annotations.apply(
             lambda sample: os.path.join(self.audio_dir, f"fold{sample['fold']}", sample["slice_file_name"]),
             axis=1
         )
-
+        
     def setup(self, stage):
         transformation = [
             torchaudio.transforms.MelSpectrogram(

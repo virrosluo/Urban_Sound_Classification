@@ -1,5 +1,10 @@
 from torch import nn
-from torchmetrics.classification import MulticlassAccuracy, MulticlassPrecision, MulticlassRecall, MulticlassF1Score
+from torchmetrics.classification import (
+    MulticlassAccuracy, 
+    MulticlassPrecision, 
+    MulticlassRecall, 
+    MulticlassF1Score
+)
 
 import wandb
 import torch
@@ -26,7 +31,7 @@ class ResnetLightning(lightning.LightningModule):
         logits = self.model(x)
         loss = self.criterion(logits, y)
 
-        self.log_dict({"train_loss": loss}, sync_dist=True)
+        self.log_dict({"train_loss": loss})
         
         return loss
 
@@ -38,13 +43,13 @@ class ResnetLightning(lightning.LightningModule):
         loss = self.criterion(logits, y)
         preds = torch.argmax(torch.softmax(logits, -1), -1)
         
-        self.log("valid_loss", loss, sync_dist=True)
+        self.log("valid_loss", loss)
         self.log_dict({
             "valid_accuracy": self.accuracy_metric(preds, y),
             "valid_precision": self.precision_metric(preds, y),
             "valid_recall": self.recall_metric(preds, y),
             "valid_f1": self.f1_metric(preds, y)
-        }, sync_dist=True)
+        })
 
         if batch_idx == 0:
             self.log_mel_spectrogram(x, y, preds)
@@ -58,13 +63,13 @@ class ResnetLightning(lightning.LightningModule):
         loss = self.criterion(logits, y)
         preds = torch.argmax(torch.softmax(logits, -1), -1)
         
-        self.log("test_loss", loss, sync_dist=True)
+        self.log("test_loss", loss)
         self.log_dict({
             "test_accuracy": self.accuracy_metric(preds, y),
             "test_precision": self.precision_metric(preds, y),
             "test_recall": self.recall_metric(preds, y),
             "test_f1": self.f1_metric(preds, y)
-        }, sync_dist=True)
+        })
         
         if batch_idx == 0:
             self.log_mel_spectrogram(x, y, preds)
@@ -115,12 +120,6 @@ class ResnetLightning(lightning.LightningModule):
         plt.close(fig)
 
     def configure_optimizers(self):
-        # optimizer = torch.optim.AdamW(params=self.model.parameters(), lr=1e-4)
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        #     optimizer=optimizer,
-        #     T_max=self.trainer.max_steps
-        # )
-        # return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
         optimizer = torch.optim.AdamW(params=self.model.parameters(), lr=1e-4)
         return optimizer
